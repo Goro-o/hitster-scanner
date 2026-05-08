@@ -105,8 +105,9 @@ body{
   background:linear-gradient(90deg,#ff6ec7,#7873f5);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
 }
-.btn-stop{background:transparent;color:#fff;border:2px solid #ff6ec7;border-radius:50px;padding:14px 40px;font-size:1rem;cursor:pointer}
-.btn-stop:active{border-color:#fff}
+.btn-toggle{background:transparent;color:#fff;border:2px solid #ff6ec7;border-radius:50px;padding:14px 40px;font-size:1rem;cursor:pointer}
+.btn-toggle:active{border-color:#fff}
+.btn-toggle:disabled{opacity:0.3;border-color:#555;cursor:default}
 
 /* Loading overlay */
 #loading{
@@ -186,9 +187,9 @@ body{
       <div class="loading-text">読み込み中...</div>
     </div>
     <div id="playing">
-      <div class="now-label">&#9834; 再生中</div>
+      <div class="now-label" id="play-label">&#9834; 再生中</div>
       <div class="timer" id="timer-display"></div>
-      <button class="btn-stop" id="btn-stop">&#9632; 停止</button>
+      <button class="btn-toggle" id="btn-toggle">&#9646;&#9646; 一時停止</button>
       <button class="btn-next" id="btn-next2">次のカード</button>
     </div>
   </div>
@@ -213,6 +214,12 @@ let scanning = false;
 let detectedTrackId = null;
 let playTimer = null;
 let cdInterval = null;
+let endPoll = null;
+let isPaused = false;
+let playbackFinished = false;
+let timerRemainingMs = 0;
+let timerStartedAt = 0;
+let expectingPause = false;
 
 // ==================== UTIL ====================
 const $ = id => document.getElementById(id);
@@ -341,6 +348,12 @@ async function initPlayer() {
     spPlayer.addListener('initialization_error', () => { webDeviceId = null; });
     spPlayer.addListener('authentication_error', () => { webDeviceId = null; });
     spPlayer.addListener('account_error', () => { webDeviceId = null; });
+    spPlayer.addListener('player_state_changed', state => {
+      if (!state || playbackFinished || isPaused || expectingPause) return;
+      if (mode() === 'full' && state.paused && $('playing').classList.contains('active')) {
+        onPlaybackFinished();
+      }
+    });
     const ok = await spPlayer.connect();
     if (!ok) webDeviceId = null;
   } catch { /* SDK not supported on this browser */ }
@@ -405,27 +418,89 @@ async function playTrack(trackId) {
       const errBody = await res.json().catch(() => ({}));
       throw new Error(errBody?.error?.message || 'HTTP ' + res.status);
     }
+    isPaused = false;
+    playbackFinished = false;
     setStatus(isMobile ? 'Spotify アプリで再生中' : 'ブラウザで再生中');
     if (mode() === 'random30s') {
-      playTimer = setTimeout(() => stopPlay(), 30000);
+      timerRemainingMs = 30000;
+      timerStartedAt = Date.now();
+      playTimer = setTimeout(() => onPlaybackFinished(), 30000);
       startCountdown(30);
+    } else {
+      startEndPoll();
     }
     return true;
   } catch (e) { showErr('再生エラー: ' + e.message); return false; }
 }
 
-async function stopPlay() {
-  clearTimers();
+async function pausePlayback() {
   const dev = await getDevice();
   if (dev) { try { await apiPut('https://api.spotify.com/v1/me/player/pause?device_id=' + dev); } catch {} }
+}
+
+async function resumePlayback() {
+  const dev = await getDevice();
+  if (dev) { try { await apiPut('https://api.spotify.com/v1/me/player/play?device_id=' + dev); } catch {} }
+}
+
+async function togglePlayback() {
+  if (playbackFinished) return;
+  if (isPaused) {
+    await resumePlayback();
+    isPaused = false;
+    $('play-label').innerHTML = '&#9834; 再生中';
+    $('btn-toggle').innerHTML = '&#9646;&#9646; 一時停止';
+    setStatus(isMobile ? 'Spotify アプリで再生中' : 'ブラウザで再生中');
+    if (mode() === 'random30s' && timerRemainingMs > 0) {
+      timerStartedAt = Date.now();
+      playTimer = setTimeout(() => onPlaybackFinished(), timerRemainingMs);
+      startCountdown(Math.ceil(timerRemainingMs / 1000));
+    } else if (mode() === 'full') {
+      startEndPoll();
+    }
+  } else {
+    if (mode() === 'random30s') {
+      clearTimers();
+      const elapsed = Date.now() - timerStartedAt;
+      timerRemainingMs = Math.max(0, timerRemainingMs - elapsed);
+    } else {
+      clearTimers();
+    }
+    expectingPause = true;
+    setTimeout(() => expectingPause = false, 2000);
+    await pausePlayback();
+    isPaused = true;
+    $('play-label').innerHTML = '&#9646;&#9646; 一時停止中';
+    $('btn-toggle').innerHTML = '&#9654; 再開';
+    setStatus('一時停止中');
+  }
+}
+
+async function onPlaybackFinished() {
+  clearTimers();
+  playbackFinished = true;
+  isPaused = false;
+  await pausePlayback();
+  $('play-label').innerHTML = '&#10003; 完了';
+  $('timer-display').textContent = '';
+  $('btn-toggle').disabled = true;
+  $('btn-toggle').innerHTML = '&#9646;&#9646; 一時停止';
+  setStatus('再生完了');
+}
+
+async function stopPlay() {
+  clearTimers();
+  await pausePlayback();
 }
 
 function clearTimers() {
   if (playTimer) { clearTimeout(playTimer); playTimer = null; }
   if (cdInterval) { clearInterval(cdInterval); cdInterval = null; }
+  if (endPoll) { clearInterval(endPoll); endPoll = null; }
 }
 
 function startCountdown(sec) {
+  if (cdInterval) clearInterval(cdInterval);
   let r = sec;
   const el = $('timer-display');
   el.textContent = r + '秒';
@@ -434,6 +509,21 @@ function startCountdown(sec) {
     el.textContent = r > 0 ? r + '秒' : '完了';
     if (r <= 0) clearInterval(cdInterval);
   }, 1000);
+}
+
+function startEndPoll() {
+  if (endPoll) clearInterval(endPoll);
+  endPoll = setInterval(async () => {
+    if (isPaused || playbackFinished) return;
+    try {
+      const t = await ensureToken();
+      const r = await fetch('https://api.spotify.com/v1/me/player', { headers: { Authorization: 'Bearer ' + t } });
+      if (r.status === 204) { onPlaybackFinished(); return; }
+      if (!r.ok) return;
+      const data = await r.json();
+      if (!data.is_playing && !expectingPause) onPlaybackFinished();
+    } catch {}
+  }, 3000);
 }
 
 // ==================== CAMERA ====================
@@ -502,11 +592,17 @@ async function onDetected(tid) {
 async function resetScanner() {
   detectedTrackId = null;
   clearTimers();
+  isPaused = false;
+  playbackFinished = false;
+  timerRemainingMs = 0;
   $('guide').classList.remove('found');
   $('panel').classList.remove('show');
   $('playing').classList.remove('active');
   $('loading').classList.remove('active');
   $('timer-display').textContent = '';
+  $('play-label').innerHTML = '&#9834; 再生中';
+  $('btn-toggle').disabled = false;
+  $('btn-toggle').innerHTML = '&#9646;&#9646; 一時停止';
   const ok = await openCamera();
   if (ok) startScan();
 }
@@ -555,7 +651,7 @@ $('btn-play').onclick = async () => {
     if (mode() === 'full') $('timer-display').textContent = '';
   }
 };
-$('btn-stop').onclick = async () => { await stopPlay(); resetScanner(); };
+$('btn-toggle').onclick = togglePlayback;
 $('btn-next').onclick = resetScanner;
 $('btn-next2').onclick = async () => { await stopPlay(); resetScanner(); };
 
