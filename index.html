@@ -637,7 +637,7 @@ $('btn-start').onclick = async () => {
     if (ok) startScan();
   }
 };
-$('btn-gear').onclick = () => { closeCamera(); clearTimers(); stopPlay(); showScreen('settings'); updateUI(); };
+$('btn-gear').onclick = () => { closeCamera(); showScreen('settings'); updateUI(); };
 $('inp-cid').onchange = e => { const v = e.target.value.trim(); if (v) localStorage.setItem('sp_cid', v); };
 document.querySelectorAll('.mode-toggle button').forEach(b => {
   b.onclick = () => {
@@ -663,8 +663,8 @@ document.addEventListener('visibilitychange', () => {
     scanning = false;
     if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
     $('video').srcObject = null;
-  } else if ($('scanner').classList.contains('active')) {
-    openCamera().then(ok => { if (ok && !detectedTrackId && !$('playing').classList.contains('active')) startScan(); });
+  } else if ($('scanner').classList.contains('active') && !detectedTrackId) {
+    openCamera().then(ok => { if (ok) startScan(); });
   }
 });
 
