@@ -9,211 +9,504 @@
 body{
   background:#0a0a0a;color:#fff;
   font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-  height:100dvh;display:flex;flex-direction:column;overflow:hidden;
+  height:100dvh;overflow:hidden;
+  -webkit-user-select:none;user-select:none;
 }
-header{
-  text-align:center;padding:10px;
+.screen{display:none;height:100dvh;flex-direction:column}
+.screen.active{display:flex}
+
+/* Header */
+.hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px;
   background:linear-gradient(135deg,#1a0033,#0a0a2e);
 }
-header h1{
-  font-size:1.1rem;letter-spacing:3px;
+.hdr h1{
+  font-size:1rem;letter-spacing:3px;
   background:linear-gradient(90deg,#ff6ec7,#7873f5,#4fc3f7);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
 }
-#camera-area{flex:1;position:relative;overflow:hidden}
+.hdr-btn{background:none;border:none;color:#888;font-size:1.2rem;cursor:pointer;padding:4px 8px}
+
+/* Settings */
+.s-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:14px;overflow-y:auto}
+.card{background:#111;border-radius:16px;padding:20px;width:100%;max-width:360px}
+.card h2{font-size:0.95rem;margin-bottom:14px;color:#ccc}
+.card label{display:block;font-size:0.8rem;color:#888;margin-bottom:6px}
+.card input{
+  width:100%;padding:10px 12px;
+  background:#1a1a1a;border:1px solid #333;border-radius:8px;
+  color:#fff;font-size:0.9rem;
+}
+.card input:focus{outline:none;border-color:#7873f5}
+.card p{font-size:0.85rem;color:#999;line-height:1.6;margin-bottom:12px}
+.btn-sp{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;padding:14px;
+  background:#1DB954;color:#fff;
+  border:none;border-radius:50px;
+  font-size:1rem;font-weight:700;cursor:pointer;margin-top:12px;
+}
+.btn-sp:active{opacity:0.8}
+.btn-sp:disabled{background:#333;color:#666}
+.btn-start{background:linear-gradient(135deg,#7873f5,#4fc3f7);margin-top:12px}
+.mode-toggle{display:flex;background:#1a1a1a;border-radius:12px;overflow:hidden}
+.mode-toggle button{
+  flex:1;padding:12px 8px;background:transparent;border:none;
+  color:#888;font-size:0.85rem;cursor:pointer;transition:all 0.2s;
+}
+.mode-toggle button.active{
+  background:linear-gradient(135deg,#7873f5,#4fc3f7);color:#fff;font-weight:700;
+}
+.user-info{display:flex;align-items:center;gap:8px;padding:12px;background:#1a1a1a;border-radius:12px;margin-top:8px}
+.user-info .name{flex:1;font-size:0.9rem}
+.user-info .logout{background:none;border:1px solid #444;border-radius:8px;color:#888;padding:6px 12px;font-size:0.75rem;cursor:pointer}
+.err-msg{background:#331111;border:1px solid #662222;border-radius:12px;padding:14px;color:#ff8888;font-size:0.85rem;text-align:center;margin-top:12px}
+
+/* Scanner */
+#scanner-area{flex:1;position:relative;overflow:hidden}
 #video{width:100%;height:100%;object-fit:cover;display:block}
 #guide{
-  position:absolute;top:50%;left:50%;
-  transform:translate(-50%,-50%);
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
   width:220px;height:220px;
-  border:2px solid rgba(255,110,199,0.4);
-  border-radius:16px;pointer-events:none;
-  transition:border-color 0.2s,box-shadow 0.2s;
+  border:2px solid rgba(255,110,199,0.4);border-radius:16px;
+  pointer-events:none;transition:border-color 0.2s,box-shadow 0.2s;
 }
-#guide.found{
-  border-color:#4fc3f7;
-  box-shadow:0 0 24px rgba(79,195,247,0.5);
-}
+#guide.found{border-color:#4fc3f7;box-shadow:0 0 24px rgba(79,195,247,0.5)}
 #panel{
   position:absolute;bottom:0;left:0;right:0;
-  background:rgba(10,10,10,0.96);
-  padding:28px 20px;text-align:center;
-  transform:translateY(100%);
-  transition:transform 0.3s ease;
+  background:rgba(10,10,10,0.96);padding:24px 20px;text-align:center;
+  transform:translateY(100%);transition:transform 0.3s ease;z-index:20;
 }
 #panel.show{transform:translateY(0)}
-#play{
-  background:linear-gradient(135deg,#1DB954,#1ed760);
-  color:#fff;border:none;border-radius:50px;
-  padding:16px 44px;font-size:1.1rem;font-weight:700;
-  cursor:pointer;display:inline-flex;align-items:center;gap:8px;
+.btn-play{
+  background:linear-gradient(135deg,#1DB954,#1ed760);color:#fff;
+  border:none;border-radius:50px;padding:16px 44px;
+  font-size:1.1rem;font-weight:700;cursor:pointer;
 }
-#play:active{opacity:0.8}
-#next{
-  background:transparent;color:#888;
-  border:1px solid #333;border-radius:50px;
-  padding:10px 28px;font-size:0.85rem;
-  cursor:pointer;margin-top:14px;
+.btn-play:active{opacity:0.8}
+.btn-next{
+  background:transparent;color:#888;border:1px solid #333;border-radius:50px;
+  padding:10px 28px;font-size:0.85rem;cursor:pointer;margin-top:14px;
 }
-#next:active{color:#fff;border-color:#666}
-#status{
-  text-align:center;padding:8px;
-  font-size:0.8rem;color:#666;
+.btn-next:active{color:#fff;border-color:#666}
+
+/* Playing overlay */
+#playing{
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  background:rgba(10,10,10,0.95);
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  gap:20px;z-index:30;
 }
-#error{
-  flex:1;display:none;flex-direction:column;
-  align-items:center;justify-content:center;
-  padding:24px;text-align:center;
+#playing.active{display:flex}
+.now-label{font-size:0.9rem;color:#4fc3f7;letter-spacing:2px}
+.timer{
+  font-size:3rem;font-weight:700;
+  background:linear-gradient(90deg,#ff6ec7,#7873f5);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
 }
-#error h2{color:#ff6ec7;font-size:1.1rem}
-#error p{color:#999;line-height:1.8;margin-top:12px;font-size:0.9rem}
+.btn-stop{background:transparent;color:#fff;border:2px solid #ff6ec7;border-radius:50px;padding:14px 40px;font-size:1rem;cursor:pointer}
+.btn-stop:active{border-color:#fff}
+
+#status{text-align:center;padding:8px;font-size:0.75rem;color:#555;background:#0a0a0a}
 </style>
 </head>
 <body>
 
-<header><h1>HITSTER SCANNER</h1></header>
-
-<div id="camera-area">
-  <video id="video" autoplay playsinline muted></video>
-  <div id="guide"></div>
-  <div id="panel">
-    <button id="play">&#9654; Spotify で再生</button><br>
-    <button id="next">次のカードをスキャン</button>
+<!-- ===== SETTINGS ===== -->
+<div id="settings" class="screen active">
+  <div class="hdr"><h1>HITSTER</h1><span></span></div>
+  <div class="s-body">
+    <div class="card">
+      <h2>Spotify 連携</h2>
+      <div id="sec-login">
+        <p>QRコードをスキャンして、スポイラーなしで曲を再生します。</p>
+        <button class="btn-sp" id="btn-login">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+          Spotify でログイン
+        </button>
+      </div>
+      <div id="sec-user" style="display:none">
+        <div class="user-info">
+          <span class="name" id="user-name">-</span>
+          <button class="logout" id="btn-logout">ログアウト</button>
+        </div>
+        <button class="btn-sp btn-start" id="btn-start">スキャナーを起動</button>
+      </div>
+      <div id="err-box"></div>
+    </div>
+    <div class="card">
+      <h2>再生モード</h2>
+      <div class="mode-toggle">
+        <button id="m-full" class="active" data-mode="full">冒頭から再生</button>
+        <button id="m-rand" data-mode="random30s">ランダム30秒</button>
+      </div>
+    </div>
+    <details style="width:100%;max-width:360px">
+      <summary style="color:#555;font-size:0.75rem;cursor:pointer">詳細設定</summary>
+      <div class="card" style="margin-top:8px">
+        <label>Spotify Client ID</label>
+        <input type="text" id="inp-cid" placeholder="Spotify App の Client ID">
+      </div>
+    </details>
   </div>
 </div>
 
-<div id="error">
-  <h2>カメラを起動できません</h2>
-  <p>
-    ブラウザの設定でカメラの使用を許可してください。<br><br>
-    Chrome の場合：アドレスバー左のアイコン → カメラ → 許可
-  </p>
+<!-- ===== SCANNER ===== -->
+<div id="scanner" class="screen">
+  <div class="hdr">
+    <h1>HITSTER</h1>
+    <button class="hdr-btn" id="btn-gear" title="設定">&#9881;</button>
+  </div>
+  <div id="scanner-area">
+    <video id="video" autoplay playsinline muted></video>
+    <div id="guide"></div>
+    <div id="panel">
+      <button class="btn-play" id="btn-play">&#9654; 再生</button><br>
+      <button class="btn-next" id="btn-next">次のカードをスキャン</button>
+    </div>
+    <div id="playing">
+      <div class="now-label">&#9834; 再生中</div>
+      <div class="timer" id="timer-display"></div>
+      <button class="btn-stop" id="btn-stop">&#9632; 停止</button>
+      <button class="btn-next" id="btn-next2">次のカード</button>
+    </div>
+  </div>
+  <div id="status">準備中...</div>
 </div>
 
-<div id="status">起動中...</div>
-
+<!-- Spotify Web Playback SDK -->
+<script src="https://sdk.scdn.co/spotify-player.js"></script>
 <script>
-const video = document.getElementById('video');
-const guide = document.getElementById('guide');
-const panel = document.getElementById('panel');
-const playBtn = document.getElementById('play');
-const nextBtn = document.getElementById('next');
-const statusEl = document.getElementById('status');
-const errorEl = document.getElementById('error');
-const cameraArea = document.getElementById('camera-area');
+// ==================== CONFIG ====================
+const DEFAULT_CID = '26bdd4c156f045f484482bb23ae05e44';
+const REDIRECT = location.href.split('?')[0].split('#')[0];
+const SCOPES = 'streaming user-read-email user-read-private user-modify-playback-state user-read-playback-state';
 
-let stream = null;
+// ==================== STATE ====================
+let token = null;
+let spPlayer = null;
+let webDeviceId = null;
+let sdkReady = false;
+let cameraStream = null;
 let scanning = false;
-let detectedUrl = null;
-let animId = null;
+let detectedTrackId = null;
+let playTimer = null;
+let cdInterval = null;
 
-// カメラ起動
-async function openCamera() {
-  // 既存ストリームを確実に解放
-  closeCamera();
+// ==================== UTIL ====================
+const $ = id => document.getElementById(id);
+const cid = () => localStorage.getItem('sp_cid') || DEFAULT_CID;
+const mode = () => localStorage.getItem('play_mode') || 'full';
 
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(name).classList.add('active');
+}
+function setStatus(t) { $('status').textContent = t; }
+function showErr(m) {
+  $('err-box').innerHTML = '<div class="err-msg">' + m + '</div>';
+  setTimeout(() => $('err-box').innerHTML = '', 6000);
+}
+
+// ==================== PKCE AUTH ====================
+function rndStr(n) {
+  const c = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const v = crypto.getRandomValues(new Uint8Array(n));
+  return v.reduce((a, x) => a + c[x % c.length], '');
+}
+async function s256(plain) {
+  const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(plain));
+  return btoa(String.fromCharCode(...new Uint8Array(d))).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+}
+
+async function login() {
+  const id = cid();
+  if (!id) { showErr('Client ID を設定してください'); return; }
+  const verifier = rndStr(64);
+  sessionStorage.setItem('pkce_v', verifier);
+  const challenge = await s256(verifier);
+  const p = new URLSearchParams({
+    client_id: id, response_type: 'code', redirect_uri: REDIRECT,
+    code_challenge_method: 'S256', code_challenge: challenge, scope: SCOPES,
+  });
+  location.href = 'https://accounts.spotify.com/authorize?' + p;
+}
+
+async function handleCallback() {
+  const p = new URLSearchParams(location.search);
+  if (p.get('error')) { showErr('認証エラー: ' + p.get('error')); history.replaceState({}, '', REDIRECT); return; }
+  const code = p.get('code');
+  if (!code) return;
+  const verifier = sessionStorage.getItem('pkce_v');
+  if (!verifier) { showErr('認証セッション切れ。再度ログインしてください。'); return; }
   try {
-    stream = await navigator.mediaDevices.getUserMedia({
+    const r = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: cid(), grant_type: 'authorization_code',
+        code, redirect_uri: REDIRECT, code_verifier: verifier,
+      }),
+    });
+    if (!r.ok) throw new Error(r.status);
+    saveTokens(await r.json());
+    history.replaceState({}, '', REDIRECT);
+  } catch (e) { showErr('ログイン失敗: ' + e.message); }
+}
+
+function saveTokens(d) {
+  token = d.access_token;
+  localStorage.setItem('sp_at', d.access_token);
+  if (d.refresh_token) localStorage.setItem('sp_rt', d.refresh_token);
+  localStorage.setItem('sp_exp', String(Date.now() + d.expires_in * 1000));
+}
+
+async function ensureToken() {
+  const exp = parseInt(localStorage.getItem('sp_exp') || '0');
+  if (Date.now() > exp - 300000) {
+    const rt = localStorage.getItem('sp_rt');
+    if (!rt) { doLogout(); throw new Error('要再ログイン'); }
+    const r = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ client_id: cid(), grant_type: 'refresh_token', refresh_token: rt }),
+    });
+    if (!r.ok) { doLogout(); throw new Error('トークン更新失敗'); }
+    saveTokens(await r.json());
+  }
+  token = localStorage.getItem('sp_at');
+  return token;
+}
+
+function loggedIn() { return !!localStorage.getItem('sp_at') && !!localStorage.getItem('sp_rt'); }
+
+function doLogout() {
+  token = null;
+  localStorage.removeItem('sp_at'); localStorage.removeItem('sp_rt'); localStorage.removeItem('sp_exp');
+  if (spPlayer) { spPlayer.disconnect(); spPlayer = null; }
+  webDeviceId = null;
+  closeCamera();
+  updateUI();
+  showScreen('settings');
+}
+
+// ==================== SPOTIFY API ====================
+async function apiGet(u) {
+  const t = await ensureToken();
+  const r = await fetch(u, { headers: { Authorization: 'Bearer ' + t } });
+  if (!r.ok) throw new Error('API ' + r.status);
+  return r.json();
+}
+async function apiPut(u, body) {
+  const t = await ensureToken();
+  return fetch(u, {
+    method: 'PUT',
+    headers: { Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+}
+
+// ==================== WEB PLAYBACK SDK ====================
+window.onSpotifyWebPlaybackSDKReady = () => { sdkReady = true; if (loggedIn()) initPlayer(); };
+
+async function initPlayer() {
+  if (spPlayer || !sdkReady) return;
+  try {
+    spPlayer = new Spotify.Player({
+      name: 'Hitster Scanner',
+      getOAuthToken: async cb => { cb(await ensureToken()); },
+      volume: 0.8,
+    });
+    spPlayer.addListener('ready', ({ device_id }) => { webDeviceId = device_id; setStatus('スキャン準備完了'); });
+    spPlayer.addListener('not_ready', () => { webDeviceId = null; });
+    spPlayer.addListener('initialization_error', () => { webDeviceId = null; });
+    spPlayer.addListener('authentication_error', () => { webDeviceId = null; });
+    spPlayer.addListener('account_error', () => { webDeviceId = null; });
+    const ok = await spPlayer.connect();
+    if (!ok) webDeviceId = null;
+  } catch { /* SDK not supported on this browser */ }
+}
+
+async function getDevice() {
+  if (webDeviceId) return webDeviceId;
+  try {
+    const d = await apiGet('https://api.spotify.com/v1/me/player/devices');
+    const a = d.devices.find(x => x.is_active);
+    return a ? a.id : (d.devices[0]?.id || null);
+  } catch { return null; }
+}
+
+// ==================== PLAYBACK ====================
+async function playTrack(trackId) {
+  const dev = await getDevice();
+  if (!dev) { showErr('Spotify デバイスが見つかりません。Spotify アプリを起動してください。'); return false; }
+  try {
+    await apiPut('https://api.spotify.com/v1/me/player/play?device_id=' + dev, {
+      uris: ['spotify:track:' + trackId],
+    });
+    if (mode() === 'random30s') {
+      await new Promise(r => setTimeout(r, 800));
+      const info = await apiGet('https://api.spotify.com/v1/tracks/' + trackId);
+      const dur = info.duration_ms;
+      const maxS = Math.max(0, dur - 30000);
+      const pos = Math.floor(Math.random() * maxS);
+      await apiPut('https://api.spotify.com/v1/me/player/seek?position_ms=' + pos + '&device_id=' + dev);
+      playTimer = setTimeout(() => stopPlay(), 30000);
+      startCountdown(30);
+    }
+    return true;
+  } catch (e) { showErr('再生エラー: ' + e.message); return false; }
+}
+
+async function stopPlay() {
+  clearTimers();
+  const dev = await getDevice();
+  if (dev) { try { await apiPut('https://api.spotify.com/v1/me/player/pause?device_id=' + dev); } catch {} }
+}
+
+function clearTimers() {
+  if (playTimer) { clearTimeout(playTimer); playTimer = null; }
+  if (cdInterval) { clearInterval(cdInterval); cdInterval = null; }
+}
+
+function startCountdown(sec) {
+  let r = sec;
+  const el = $('timer-display');
+  el.textContent = r + '秒';
+  cdInterval = setInterval(() => {
+    r--;
+    el.textContent = r > 0 ? r + '秒' : '完了';
+    if (r <= 0) clearInterval(cdInterval);
+  }, 1000);
+}
+
+// ==================== CAMERA ====================
+async function openCamera() {
+  closeCamera();
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
     });
-    video.srcObject = stream;
-    await video.play();
-    cameraArea.style.display = '';
-    errorEl.style.display = 'none';
+    $('video').srcObject = cameraStream;
+    await $('video').play();
     return true;
-  } catch (e) {
-    console.error('Camera error:', e);
-    cameraArea.style.display = 'none';
-    errorEl.style.display = 'flex';
-    statusEl.textContent = 'カメラエラー';
-    return false;
-  }
+  } catch { setStatus('カメラにアクセスできません'); return false; }
 }
 
-// カメラ停止
 function closeCamera() {
   scanning = false;
-  if (animId) { cancelAnimationFrame(animId); animId = null; }
-  if (stream) {
-    stream.getTracks().forEach(t => t.stop());
-    stream = null;
-  }
-  video.srcObject = null;
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+  $('video').srcObject = null;
 }
 
-// QRスキャンループ
 async function startScan() {
-  if (!('BarcodeDetector' in window)) {
-    statusEl.textContent = 'このブラウザはQR読み取り非対応です。Chrome をお使いください。';
-    return;
-  }
-
-  const detector = new BarcodeDetector({ formats: ['qr_code'] });
+  if (!('BarcodeDetector' in window)) { setStatus('QR読み取り非対応。Chrome をお使いください。'); return; }
+  const det = new BarcodeDetector({ formats: ['qr_code'] });
   scanning = true;
-  statusEl.textContent = 'QRコードにカメラを向けてください';
-
+  setStatus('QRコードにカメラを向けてください');
+  const vid = $('video');
   const loop = async () => {
     if (!scanning) return;
     try {
-      const codes = await detector.detect(video);
+      const codes = await det.detect(vid);
       for (const c of codes) {
-        if (c.rawValue && c.rawValue.includes('spotify.com')) {
-          onFound(c.rawValue);
-          return;
-        }
+        const tid = extractId(c.rawValue);
+        if (tid) { onDetected(tid); return; }
       }
-    } catch (_) {}
-    animId = requestAnimationFrame(loop);
+    } catch {}
+    requestAnimationFrame(loop);
   };
   loop();
 }
 
-// QR検出時
-function onFound(url) {
-  scanning = false;
-  detectedUrl = url;
-  if (navigator.vibrate) navigator.vibrate(100);
-  guide.classList.add('found');
-  panel.classList.add('show');
-  statusEl.textContent = 'QRコード検出！';
+function extractId(url) {
+  if (!url) return null;
+  const m = url.match(/open\.spotify\.com\/track\/([a-zA-Z0-9]+)/);
+  return m ? m[1] : null;
 }
 
-// 再生ボタン
-playBtn.addEventListener('click', () => {
-  if (detectedUrl) window.open(detectedUrl, '_blank');
-});
+function onDetected(tid) {
+  scanning = false;
+  detectedTrackId = tid;
+  if (navigator.vibrate) navigator.vibrate(100);
+  $('guide').classList.add('found');
+  $('panel').classList.add('show');
+  setStatus('QRコード検出！');
+}
 
-// 次のカードボタン
-nextBtn.addEventListener('click', () => {
-  detectedUrl = null;
-  guide.classList.remove('found');
-  panel.classList.remove('show');
+function resetScanner() {
+  detectedTrackId = null;
+  clearTimers();
+  $('guide').classList.remove('found');
+  $('panel').classList.remove('show');
+  $('playing').classList.remove('active');
+  $('timer-display').textContent = '';
   startScan();
-});
+}
 
-// ページ復帰時にカメラ再起動（黒画面対策の要）
+// ==================== UI ====================
+async function updateUI() {
+  $('inp-cid').value = cid();
+  const m = mode();
+  document.querySelectorAll('.mode-toggle button').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
+  if (loggedIn()) {
+    try {
+      const p = await apiGet('https://api.spotify.com/v1/me');
+      $('sec-login').style.display = 'none';
+      $('sec-user').style.display = 'block';
+      $('user-name').textContent = p.display_name || p.id;
+    } catch { doLogout(); }
+  } else {
+    $('sec-login').style.display = 'block';
+    $('sec-user').style.display = 'none';
+  }
+}
+
+// ==================== EVENTS ====================
+$('btn-login').onclick = login;
+$('btn-logout').onclick = doLogout;
+$('btn-start').onclick = async () => {
+  showScreen('scanner');
+  if (sdkReady && !spPlayer) initPlayer();
+  const ok = await openCamera();
+  if (ok) startScan();
+};
+$('btn-gear').onclick = () => { closeCamera(); clearTimers(); stopPlay(); showScreen('settings'); updateUI(); };
+$('inp-cid').onchange = e => { const v = e.target.value.trim(); if (v) localStorage.setItem('sp_cid', v); };
+document.querySelectorAll('.mode-toggle button').forEach(b => {
+  b.onclick = () => {
+    localStorage.setItem('play_mode', b.dataset.mode);
+    document.querySelectorAll('.mode-toggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+  };
+});
+$('btn-play').onclick = async () => {
+  if (!detectedTrackId) return;
+  const ok = await playTrack(detectedTrackId);
+  if (ok) {
+    $('playing').classList.add('active');
+    if (mode() === 'full') $('timer-display').textContent = '';
+  }
+};
+$('btn-stop').onclick = async () => { await stopPlay(); $('playing').classList.remove('active'); };
+$('btn-next').onclick = resetScanner;
+$('btn-next2').onclick = async () => { await stopPlay(); resetScanner(); };
+
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
-    // バッテリー節約のため停止
     scanning = false;
-    if (animId) { cancelAnimationFrame(animId); animId = null; }
-    if (stream) {
-      stream.getTracks().forEach(t => t.stop());
-      stream = null;
-    }
-    video.srcObject = null;
-  } else {
-    // 復帰時は常にカメラを再取得
-    openCamera().then(ok => {
-      if (ok && !detectedUrl) startScan();
-    });
+    if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+    $('video').srcObject = null;
+  } else if ($('scanner').classList.contains('active')) {
+    openCamera().then(ok => { if (ok && !detectedTrackId && !$('playing').classList.contains('active')) startScan(); });
   }
 });
 
-// 初回起動
-openCamera().then(ok => {
-  if (ok) startScan();
-});
+// ==================== INIT ====================
+(async () => {
+  await handleCallback();
+  await updateUI();
+  if (loggedIn() && sdkReady) initPlayer();
+})();
 </script>
 </body>
 </html>
