@@ -73,6 +73,7 @@ body{
   pointer-events:none;transition:border-color 0.2s,box-shadow 0.2s;
 }
 #guide.found{border-color:#4fc3f7;box-shadow:0 0 24px rgba(79,195,247,0.5)}
+#guide.hidden{display:none}
 #panel{
   position:absolute;bottom:0;left:0;right:0;
   background:rgba(10,10,10,0.96);padding:24px 20px;text-align:center;
@@ -576,7 +577,7 @@ async function onDetected(tid) {
   closeCamera();
   detectedTrackId = tid;
   if (navigator.vibrate) navigator.vibrate(100);
-  $('guide').classList.add('found');
+  $('guide').classList.add('found','hidden');
   $('loading').classList.add('active');
   setStatus('QRコード検出 - 再生開始...');
   const ok = await playTrack(tid);
@@ -595,7 +596,7 @@ async function resetScanner() {
   isPaused = false;
   playbackFinished = false;
   timerRemainingMs = 0;
-  $('guide').classList.remove('found');
+  $('guide').classList.remove('found','hidden');
   $('panel').classList.remove('show');
   $('playing').classList.remove('active');
   $('loading').classList.remove('active');
@@ -631,8 +632,10 @@ $('btn-logout').onclick = doLogout;
 $('btn-start').onclick = async () => {
   showScreen('scanner');
   if (sdkReady && !spPlayer) initPlayer();
-  const ok = await openCamera();
-  if (ok) startScan();
+  if (!detectedTrackId) {
+    const ok = await openCamera();
+    if (ok) startScan();
+  }
 };
 $('btn-gear').onclick = () => { closeCamera(); clearTimers(); stopPlay(); showScreen('settings'); updateUI(); };
 $('inp-cid').onchange = e => { const v = e.target.value.trim(); if (v) localStorage.setItem('sp_cid', v); };
