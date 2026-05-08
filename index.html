@@ -341,10 +341,33 @@ async function getDevice() {
 }
 
 // ==================== PLAYBACK ====================
+async function wakeSpotify() {
+  const f = document.createElement('iframe');
+  f.style.display = 'none';
+  f.src = 'spotify://';
+  document.body.appendChild(f);
+  setTimeout(() => f.remove(), 2000);
+}
+
+async function findDeviceWithRetry() {
+  let dev = await getDevice();
+  if (dev) return dev;
+  if (!isMobile) return null;
+  setStatus('Spotify アプリを起動中...');
+  wakeSpotify();
+  for (let i = 0; i < 4; i++) {
+    await new Promise(r => setTimeout(r, 2000));
+    dev = await getDevice();
+    if (dev) return dev;
+    setStatus('デバイスを検索中... (' + (i + 2) + '/5)');
+  }
+  return null;
+}
+
 async function playTrack(trackId) {
-  const dev = await getDevice();
+  const dev = await findDeviceWithRetry();
   if (!dev) {
-    showErr('Spotify デバイスが見つかりません。スマホの Spotify アプリを開いて一度何か再生してから、再度お試しください。');
+    showErr('Spotify デバイスが見つかりません。Spotify アプリを開いて再度お試しください。');
     return false;
   }
   try {
@@ -437,14 +460,20 @@ function extractId(url) {
   return m ? m[1] : null;
 }
 
-function onDetected(tid) {
+async function onDetected(tid) {
   scanning = false;
   closeCamera();
   detectedTrackId = tid;
   if (navigator.vibrate) navigator.vibrate(100);
   $('guide').classList.add('found');
-  $('panel').classList.add('show');
-  setStatus('QRコード検出！');
+  setStatus('QRコード検出 - 再生開始...');
+  const ok = await playTrack(tid);
+  if (ok) {
+    $('playing').classList.add('active');
+    if (mode() === 'full') $('timer-display').textContent = '';
+  } else {
+    $('panel').classList.add('show');
+  }
 }
 
 async function resetScanner() {
