@@ -326,23 +326,36 @@ async function initPlayer() {
   } catch { /* SDK not supported on this browser */ }
 }
 
+const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
 async function getDevice() {
-  if (webDeviceId) return webDeviceId;
+  // デスクトップ: Web Playback SDK（スポイラーフリー）
+  if (!isMobile && webDeviceId) return webDeviceId;
+  // モバイル or SDK未対応: Spotify Connect（アプリ側で再生）
   try {
     const d = await apiGet('https://api.spotify.com/v1/me/player/devices');
-    const a = d.devices.find(x => x.is_active);
-    return a ? a.id : (d.devices[0]?.id || null);
+    const devs = d.devices.filter(x => x.id !== webDeviceId);
+    const a = devs.find(x => x.is_active);
+    return a ? a.id : (devs[0]?.id || null);
   } catch { return null; }
 }
 
 // ==================== PLAYBACK ====================
 async function playTrack(trackId) {
   const dev = await getDevice();
-  if (!dev) { showErr('Spotify デバイスが見つかりません。Spotify アプリを起動してください。'); return false; }
+  if (!dev) {
+    showErr('Spotify デバイスが見つかりません。スマホの Spotify アプリを開いて一度何か再生してから、再度お試しください。');
+    return false;
+  }
   try {
-    await apiPut('https://api.spotify.com/v1/me/player/play?device_id=' + dev, {
+    const res = await apiPut('https://api.spotify.com/v1/me/player/play?device_id=' + dev, {
       uris: ['spotify:track:' + trackId],
     });
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      throw new Error(errBody?.error?.message || 'HTTP ' + res.status);
+    }
+    setStatus(isMobile ? 'Spotify アプリで再生中' : 'ブラウザで再生中');
     if (mode() === 'random30s') {
       await new Promise(r => setTimeout(r, 800));
       const info = await apiGet('https://api.spotify.com/v1/tracks/' + trackId);
@@ -426,6 +439,7 @@ function extractId(url) {
 
 function onDetected(tid) {
   scanning = false;
+  closeCamera();
   detectedTrackId = tid;
   if (navigator.vibrate) navigator.vibrate(100);
   $('guide').classList.add('found');
@@ -433,14 +447,15 @@ function onDetected(tid) {
   setStatus('QRコード検出！');
 }
 
-function resetScanner() {
+async function resetScanner() {
   detectedTrackId = null;
   clearTimers();
   $('guide').classList.remove('found');
   $('panel').classList.remove('show');
   $('playing').classList.remove('active');
   $('timer-display').textContent = '';
-  startScan();
+  const ok = await openCamera();
+  if (ok) startScan();
 }
 
 // ==================== UI ====================
